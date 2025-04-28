@@ -1,5 +1,14 @@
+beautifulsoup4==4.13.4
 certifi==2025.4.26
 charset-normalizer==3.4.1
+elastic-transport==8.17.1
+elasticsearch==9.0.1
 idna==3.10
+psycopg2-binary==2.9.10
+python-dateutil==2.9.0.post0
+python-dotenv==1.1.0
 requests==2.32.3
+six==1.17.0
+soupsieve==2.7
+typing_extensions==4.13.2
 urllib3==2.4.0
