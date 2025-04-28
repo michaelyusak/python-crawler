@@ -4,9 +4,11 @@ from dotenv import load_dotenv
 
 from logs.setup import setup_logger
 from crawl.fetcher import fetch_page
-from crawl.parser import extract_links
+from crawl.parser import extract_links, html_to_es_doc
 from crawl.utils import is_valid_url
-from crawl.storage import save_page
+from crawl.storage.elastic import ElasticSearchClient
+from crawl.storage.postgres import PostgresClient
+from crawl.storage.local import save_page
 
 SEEDS_FILE = "configs/seeds.txt"
 
@@ -23,6 +25,12 @@ def main():
     load_dotenv()
 
     setup_logger()
+
+    es_client = ElasticSearchClient()
+    es_client.connect()
+
+    pg_client = PostgresClient()
+    pg_client.connect()
 
     seeds = load_seeds(SEEDS_FILE)
     seen_urls = set()
@@ -41,7 +49,12 @@ def main():
             logging.warning(f'failed to fetch {url}')
             continue
 
+        doc = html_to_es_doc(url, html)
+
         save_page(url, html)
+        pg_client.save_site(url, html)
+        es_client.save_site(doc=doc)
+
         seen_urls.add(url)
 
         links = extract_links(html, url)
@@ -49,6 +62,9 @@ def main():
         for link in links:
             if is_valid_url(link) and link not in seen_urls:
                 url_queue.append(link)
+
+    es_client.close()
+    pg_client.close()
 
 if __name__ == '__main__':
     main()
