@@ -38,6 +38,8 @@ def main():
 
     site_limit = int(os.getenv("SITE_LIMIT"))
 
+    disable_local_storage = os.getenv("DISABLE_LOCAL_STORAGE").lower() == "true"
+
     while url_queue and len(seen_urls) < site_limit:
         url = url_queue.pop(0)
         if url in seen_urls:
@@ -51,7 +53,9 @@ def main():
 
         doc = html_to_es_doc(url, html)
 
-        save_page(url, html)
+        if not disable_local_storage:
+            save_page(url, html)
+
         pg_client.save_site(url, html)
         es_client.save_site(doc=doc)
 
