@@ -1,6 +1,7 @@
 import os
 import logging
 from dotenv import load_dotenv
+import urllib.robotparser as robot_parser
 
 from logs.setup import setup_logger
 from crawl.fetcher import fetch_page
@@ -24,6 +25,8 @@ def load_seeds(filename):
 def main():
     load_dotenv()
 
+    user_agent = os.getenv("USER_AGENT")
+
     setup_logger()
 
     es_client = ElasticSearchClient()
@@ -40,9 +43,18 @@ def main():
 
     disable_local_storage = os.getenv("DISABLE_LOCAL_STORAGE").lower() == "true"
 
+    rp = robot_parser.RobotFileParser()
+
     while url_queue and len(seen_urls) < site_limit:
         url = url_queue.pop(0)
         if url in seen_urls:
+            continue
+
+        rp.set_url(url + "/robots.txt")
+
+        rp.read()
+
+        if not rp.can_fetch(user_agent, url):
             continue
 
         logging.info(f"crawling: {url}")
