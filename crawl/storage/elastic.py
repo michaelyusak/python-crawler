@@ -27,7 +27,7 @@ class ElasticSearchClient:
             os._exit(1)
 
     def save_site(self, doc):
-        self.client.index(index=self.site_index, document=doc)
+        self.client.index(index=self.site_index, id=doc["url"], document=doc)
 
     def close(self):
         self.client.close()
