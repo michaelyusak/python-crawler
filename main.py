@@ -1,15 +1,16 @@
 import os
 import logging
 from dotenv import load_dotenv
-import urllib.robotparser as robot_parser
+import time
 
 from logs.setup import setup_logger
 from crawl.fetcher import fetch_page
 from crawl.parser import extract_links, html_to_es_doc
-from crawl.utils import is_valid_url
+from crawl.utils import is_valid_url, hash
 from crawl.storage.elastic import ElasticSearchClient
 from crawl.storage.postgres import PostgresClient
 from crawl.storage.local import save_page
+from crawl.robots import safe_read_robots_txt
 
 SEEDS_FILE = "configs/seeds.txt"
 
@@ -23,7 +24,7 @@ def load_seeds(filename):
     return seeds
 
 def main():
-    load_dotenv()
+    load_dotenv(override=True)
 
     user_agent = os.getenv("USER_AGENT")
 
@@ -43,16 +44,16 @@ def main():
 
     disable_local_storage = os.getenv("DISABLE_LOCAL_STORAGE").lower() == "true"
 
-    rp = robot_parser.RobotFileParser()
-
     while url_queue and len(seen_urls) < site_limit:
+        time.sleep(0.5)
+
         url = url_queue.pop(0)
         if url in seen_urls:
             continue
 
-        rp.set_url(url + "/robots.txt")
+        rp = safe_read_robots_txt(url)
 
-        rp.read()
+        time.sleep(0.5)
 
         if not rp.can_fetch(user_agent, url):
             continue
@@ -63,13 +64,21 @@ def main():
             logging.warning(f'failed to fetch {url}')
             continue
 
+        hash_id = hash(f"{html}:{url}")
+
+        crawled = pg_client.get_site_by_hash(hash_id)
+        if crawled is not None:
+            logging.info("Inequal normalized and hashed, %s - %s, saving %s", crawled["hash"], hash_id, url)
+            continue
+
         doc = html_to_es_doc(url, html)
+        doc["hash"] = hash_id
 
         if not disable_local_storage:
             save_page(url, html)
 
-        pg_client.save_site(url, html)
-        es_client.save_site(doc=doc)
+        pg_client.save_site(url, html, hash_id)
+        es_client.save_site(doc)
 
         seen_urls.add(url)
 
