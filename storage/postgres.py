@@ -78,6 +78,26 @@ class PostgresClient:
         except Exception as e:
             logging.error("[postgres][get_site] Failed to get crawled site %s: %s", hash, str(e))
             return None
+        
+    def get_all_hash(self) -> list[str]:
+        """
+        Get all crawled sites
+        """
+
+        try:
+            query = """
+                SELECT hash
+                FROM crawled_sites
+                ORDER 
+                    BY crawled_at
+            """
+            self.cursor.execute(query)
+            rows = self.cursor.fetchall()
+            logging.info("[postgres][get_all_hash] Successfully fetch all hash")
+            return rows
+        except Exception as e:
+            logging.error("[postgres][get_all_hash] Failed to get all hash: %s", str(e))
+            return None
 
     def close(self):
         if self.cursor:
