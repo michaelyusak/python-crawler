@@ -15,7 +15,7 @@ class ReIndexer:
         self.disable_local_storage = os.getenv("DISABLE_LOCAL_STORAGE").lower() == "true"
 
     def reindex(self):
-        hashes = self.pg_client.get_all_hash()
+        hashes = self.pg_client.get_all_hashes()
 
         done = 0
         total = len(hashes)

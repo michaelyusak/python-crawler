@@ -79,7 +79,7 @@ class PostgresClient:
             logging.error("[postgres][get_site] Failed to get crawled site %s: %s", hash, str(e))
             return None
         
-    def get_all_hash(self) -> list[str]:
+    def get_all_hashes(self) -> list[str]:
         """
         Get all crawled sites
         """
@@ -93,8 +93,9 @@ class PostgresClient:
             """
             self.cursor.execute(query)
             rows = self.cursor.fetchall()
+            hashes = [row[0] for row in rows]
             logging.info("[postgres][get_all_hash] Successfully fetch all hash")
-            return rows
+            return hashes
         except Exception as e:
             logging.error("[postgres][get_all_hash] Failed to get all hash: %s", str(e))
             return None
