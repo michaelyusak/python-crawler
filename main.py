@@ -1,3 +1,4 @@
+import os
 import logging
 from dotenv import load_dotenv
 
@@ -5,6 +6,7 @@ from logs.setup import setup_logger
 from storage.elastic import ElasticSearchClient
 from storage.postgres import PostgresClient
 from crawler import Crawler
+from reindexer import ReIndexer
 
 SEEDS_FILE = "configs/seeds.txt"
 
@@ -28,10 +30,20 @@ def main():
     pg_client = PostgresClient()
     pg_client.connect()
 
-    seeds = load_seeds(SEEDS_FILE)
+    mode = os.getenv("MODE")
+    match mode:
+        case "crawl":
+            seeds = load_seeds(SEEDS_FILE)
 
-    crawler = Crawler(es_client, pg_client, seeds)
-    crawler.crawl()
+            crawler = Crawler(es_client, pg_client, seeds)
+            crawler.crawl()
+
+        case "reindex":
+            reindexer = ReIndexer(es_client, pg_client)
+            reindexer.reindex()
+
+        case _:
+            logging.error("unknown mode")
 
     es_client.close()
     pg_client.close()
