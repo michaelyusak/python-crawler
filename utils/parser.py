@@ -26,7 +26,9 @@ def html_to_es_doc(url, html, page_type="article", tags=None):
 
     soup = BeautifulSoup(html, "html.parser")
 
-    title_tag = soup.find("title")
+    # Prefer <h1> as title if available, else fallback to <title>
+    h1_tag = soup.find("h1")
+    title_tag = h1_tag if h1_tag and h1_tag.text.strip() else soup.find("title")
     title = title_tag.text.strip() if title_tag else "Untitled"
 
     body_text = ""
