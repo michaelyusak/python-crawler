@@ -26,13 +26,14 @@ class Crawler:
 
         self.user_agent = os.getenv("USER_AGENT")
 
+        self.iter_delay = float(os.getenv("ITER_DELAY")) if os.getenv("ITER_DELAY") else 0.5
 
     def crawl(self):
         done = 0
         skipped = 0
 
         while self.url_queue and len(self.seen_urls) < self.site_limit:
-            time.sleep(0.5)
+            time.sleep(self.iter_delay)
 
             url = self.url_queue.pop(0)
             if url in self.seen_urls:
@@ -44,7 +45,7 @@ class Crawler:
 
             rp = safe_read_robots_txt(url)
 
-            time.sleep(0.5)
+            time.sleep(self.iter_delay)
 
             if not rp.can_fetch(self.user_agent, url):
                 logging.error('Robots.txt forbids fetch %s, continue', url)
@@ -66,7 +67,7 @@ class Crawler:
 
             crawled = self.pg_client.get_site_by_hash(hash_id)
             if crawled is not None:
-                logging.info("Got crawled site by has: %s - %s, continue", hash_id, url)
+                logging.info("Found crawled site by hash: %s - %s, continue", hash_id, url)
 
                 skipped += 1
                 logging.info('%s completed | %s skipped | %s targeted', done, skipped, self.site_limit)

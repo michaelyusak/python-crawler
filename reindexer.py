@@ -14,6 +14,8 @@ class ReIndexer:
 
         self.disable_local_storage = os.getenv("DISABLE_LOCAL_STORAGE").lower() == "true"
 
+        self.iter_delay = float(os.getenv("ITER_DELAY")) if os.getenv("ITER_DELAY") else 0.5
+
     def reindex(self):
         hashes = self.pg_client.get_all_hashes()
 
@@ -36,5 +38,5 @@ class ReIndexer:
             done += 1
             logging.info("%s completed | %s targeted", done, total)
 
-            time.sleep(0.3)
+            time.sleep(self.iter_delay)
 
