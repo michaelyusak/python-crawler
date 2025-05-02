@@ -27,11 +27,18 @@ class Crawler:
 
 
     def crawl(self):
+        done = 0
+        skipped = 0
+
         while self.url_queue and len(self.seen_urls) < self.site_limit:
             time.sleep(0.5)
 
             url = self.url_queue.pop(0)
             if url in self.seen_urls:
+                logging.info('url %s is seen, continue', url)
+
+                skipped += 1
+                logging.info('%s completed | %s skipped | %s targeted', done, skipped, self.site_limit)
                 continue
 
             rp = safe_read_robots_txt(url)
@@ -39,19 +46,29 @@ class Crawler:
             time.sleep(0.5)
 
             if not rp.can_fetch(self.user_agent, url):
+                logging.error('Robots.txt forbids fetch %s, continue', url)
+
+                skipped += 1
+                logging.info('%s completed | %s skipped | %s targeted', done, skipped, self.site_limit)
                 continue
 
             logging.info(f"crawling: {url}")
             html = fetch_page(url)
             if html is None:
-                logging.warning(f'failed to fetch {url}')
+                logging.error('failed to fetch %s, continue', url)
+
+                skipped += 1
+                logging.info('%s completed | %s skipped | %s targeted', done, skipped, self.site_limit)
                 continue
 
             hash_id = hash(f"{html}:{url}")
 
             crawled = self.pg_client.get_site_by_hash(hash_id)
             if crawled is not None:
-                logging.info("Inequal normalized and hashed, %s - %s, saving %s", crawled["hash"], hash_id, url)
+                logging.info("Got crawled site by has: %s - %s, continue", hash_id, url)
+
+                skipped += 1
+                logging.info('%s completed | %s skipped | %s targeted', done, skipped, self.site_limit)
                 continue
 
             doc = html_to_es_doc(url, html)
@@ -70,3 +87,6 @@ class Crawler:
             for link in links:
                 if is_valid_url(link) and link not in self.seen_urls:
                     self.url_queue.append(link)
+
+            done += 1
+            logging.info('%s completed | %s skipped | %s targeted', done, skipped, self.site_limit)
