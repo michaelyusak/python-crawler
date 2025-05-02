@@ -4,13 +4,13 @@ from dotenv import load_dotenv
 import time
 
 from logs.setup import setup_logger
-from crawl.fetcher import fetch_page
-from crawl.parser import extract_links, html_to_es_doc
-from crawl.common import is_valid_url, hash
+from utils.fetcher import fetch_page
+from utils.parser import extract_links, html_to_es_doc
+from utils.common import is_valid_url, hash
 from storage.elastic import ElasticSearchClient
 from storage.postgres import PostgresClient
 from storage.local import save_page
-from crawl.robots import safe_read_robots_txt
+from utils.robots import safe_read_robots_txt
 
 SEEDS_FILE = "configs/seeds.txt"
 
