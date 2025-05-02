@@ -5,10 +5,11 @@ import logging
 from storage.elastic import ElasticSearchClient
 from storage.postgres import PostgresClient
 from utils.common import hash, is_valid_url
-from utils.parser import html_to_es_doc, extract_links
+from utils.links import extract_links
 from utils.fetcher import fetch_page
 from utils.robots import safe_read_robots_txt
 from storage.local import save_page
+from utils.html_parser import HtmlParser
 
 class Crawler:
     def __init__(self, es_client: ElasticSearchClient, pg_client: PostgresClient, seeds: list[str]):
@@ -71,7 +72,9 @@ class Crawler:
                 logging.info('%s completed | %s skipped | %s targeted', done, skipped, self.site_limit)
                 continue
 
-            doc = html_to_es_doc(url, html)
+            html_parser = HtmlParser(url, html)
+
+            doc = html_parser.html_to_doc()
             doc["hash"] = hash_id
 
             if not self.disable_local_storage:

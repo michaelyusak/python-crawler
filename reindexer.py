@@ -5,7 +5,7 @@ import time
 from storage.elastic import ElasticSearchClient
 from storage.postgres import PostgresClient
 from storage.local import save_page
-from utils.parser import html_to_es_doc
+from utils.html_parser import HtmlParser
 
 class ReIndexer:
     def __init__(self, es_client: ElasticSearchClient, pg_client: PostgresClient):
@@ -23,7 +23,9 @@ class ReIndexer:
         for hash in hashes:
             crawled = self.pg_client.get_site_by_hash(hash)
 
-            doc = html_to_es_doc(crawled["url"], crawled["html"])
+            html_parser = HtmlParser(crawled["url"], crawled["html"])
+
+            doc = html_parser.html_to_doc()
             doc["hash"] = hash
 
             if not self.disable_local_storage:
@@ -34,5 +36,5 @@ class ReIndexer:
             done += 1
             logging.info("%s completed | %s targeted", done, total)
 
-            time.sleep(0.5)
+            time.sleep(0.3)
 
